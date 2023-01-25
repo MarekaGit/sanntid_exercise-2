@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"time"
@@ -17,25 +16,15 @@ func receiver(port int) {
 	}
 }
 
-func send(message string) {
-	p := make([]byte, 2048)
-	conn, err := net.Dial("udp", "127.0.0.1:1234")
-	if err != nil {
-		fmt.Printf("Some error %v", err)
-		return
-	}
-	fmt.Fprintf(conn, message)
+func send(message string, port int) {
+	Conn, _ := net.DialUDP("udp", nil, &net.UDPAddr{IP: []byte{10, 100, 23, 241}, Port: port, Zone: ""})
+	defer Conn.Close()
+	Conn.Write([]byte(message))
 	time.Sleep(1 * time.Second)
-	_, err = bufio.NewReader(conn).Read(p)
-	if err == nil {
-		fmt.Printf("%s\n", p)
-	} else {
-		fmt.Printf("Some error %v\n", err)
-	}
-	conn.Close()
 }
 
 func main() {
 	receiver(30000)
-	send("Hi Server, How are you doing?")
+	send("Hi Server, How are you doing?", 20005)
+
 }
