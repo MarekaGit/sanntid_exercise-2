@@ -1,0 +1,86 @@
+package main
+
+import (
+	"log"
+	"net"
+	"time"
+)
+
+func callerReadWrite(socket *net.TCPConn) {
+	var buffer [1024]byte
+	for {
+		_, err := socket.Read(buffer[:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(string(buffer[:]))
+
+		_, err = socket.Write([]byte("Hei\x00"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+}
+
+func listenerReadWrite(socket_connect *net.TCPConn) {
+	var buffer [1024]byte
+	for {
+		_, err := socket_connect.Read(buffer[:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(string(buffer[:]))
+
+		_, err = socket_connect.Write([]byte("Hade\x00"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+}
+
+func main() {
+	caller_addr, err := net.ResolveTCPAddr("tcp", "10.100.23.11:34933")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	socket_caller, err := net.DialTCP("tcp", nil, caller_addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	listener_addr, err := net.ResolveTCPAddr("tcp", "10.100.23.14:20004")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	listener, err := net.ListenTCP("tcp", listener_addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = socket_caller.Write([]byte("Connect to: 10.100.23.14:20004\x00"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	socket_listener, err := listener.AcceptTCP()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	doneChannel := make(chan bool, 1)
+
+	go callerReadWrite(socket_caller)
+	go listenerReadWrite(socket_listener)
+
+	<-doneChannel
+}
+
+//bruk ifconfig og se på ip adressene!
+//10.100.23.14:20004
+//UDP server: 10.100.23.11:36890
